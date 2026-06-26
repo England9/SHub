@@ -17,8 +17,11 @@ stock and a "Go to site" redirect button to the real retailer.
 
 ## Cursor Cloud specific instructions
 
-- Standard scripts live in `package.json`: `npm run dev` (port 3000), `npm run build`, `npm run lint`. There is no test suite.
-- Scraping reality: the target retailers (SSENSE, Farfetch, Saks, Nordstrom, Off-White, Google Shopping) use aggressive anti-bot protection and render products via JavaScript, so the server-side JSON-LD scrape almost always returns nothing from the Cloud VM (no residential proxies). Each provider therefore falls back to a deterministic **sample** catalog and the API marks those results `source: "sample"` (the UI shows an amber "Sample" badge). This is expected, not a bug — a populated grid with all 6 retailers reporting `count: 6` is the correct healthy state here.
-- The product **redirect URLs are always real** retailer search URLs (e.g. `ssense.com/en-us/men?q=...`), so the "Go to site" button works end-to-end regardless of whether scraping succeeded.
-- Sample product images are served from `picsum.photos`; rendering the grid requires outbound internet from the browser/VM.
-- To enable real product data later, plug API keys / a proxy into the providers in `lib/providers/index.ts` (or swap Google Shopping for a SERP API) — no other layers need to change.
+- Standard scripts live in `package.json`: `npm run dev` (port 3000), `npm run build`, `npm run lint`, `npm test` (Node built-in test runner via `--experimental-strip-types`, no extra deps).
+- **Live vs sample data is controlled by the `SERPAPI_API_KEY` secret/env var:**
+  - When set, `aggregateSearch` calls Google Shopping via SerpAPI (`lib/providers/googleShopping.ts`) and returns **real photos, prices, merchants and product links** (`mode: "live"`, green banner in the UI).
+  - When unset, it falls back to the deterministic **sample** catalog in `lib/providers/index.ts` (`mode: "sample"`, amber banner). A populated 36-item grid in sample mode is the expected healthy offline state.
+- **Direct HTML scraping of the retailers does NOT work from the Cloud VM** (verified): SSENSE returns a Cloudflare 403 challenge, Google Shopping 302-redirects to a consent wall, and Nordstrom's 200 response is an Akamai JS shell with no product data. This is why live data goes through SerpAPI (Google Shopping aggregates SSENSE/Off-White/Farfetch/Saks/Nordstrom as merchant "sources"), not per-site scraping. Don't waste time trying to revive direct scraping without residential proxies + a headless browser.
+- SerpAPI free tier is 100 searches/month — avoid burning quota in loops/tests. The SerpAPI parser is covered by `tests/serp-parse.test.ts` using a static fixture (no network, no quota used).
+- The Google Shopping feed does not include sizes or true per-variant stock, so cards omit size chips in live mode and show rating/delivery instead; the "Go to site" link opens the real product page for sizes/stock.
+- Images (SerpAPI thumbnails in live mode, `picsum.photos` in sample mode) require outbound internet from the browser/VM to render.

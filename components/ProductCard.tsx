@@ -3,11 +3,23 @@ import type { Product } from "@/lib/types";
 const RETAILER_COLORS: Record<string, string> = {
   ssense: "#111111",
   offwhite: "#111111",
+  "off-white": "#111111",
   farfetch: "#1f1f1f",
   saks: "#7a2230",
+  "saks-fifth-avenue": "#7a2230",
   nordstrom: "#1a1a1a",
   google: "#4285f4",
+  "google-shopping": "#4285f4",
 };
+
+/** Stable fallback color derived from the merchant key. */
+function colorFor(key: string): string {
+  if (RETAILER_COLORS[key]) return RETAILER_COLORS[key];
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue} 45% 28%)`;
+}
 
 function formatPrice(price: number | null, currency: string): string {
   if (price == null) return "See price";
@@ -23,7 +35,7 @@ function formatPrice(price: number | null, currency: string): string {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
-  const chipColor = RETAILER_COLORS[product.retailerKey] ?? "#333";
+  const chipColor = colorFor(product.retailerKey);
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
       <div className="relative aspect-[4/5] overflow-hidden bg-neutral-100">
@@ -73,6 +85,20 @@ export default function ProductCard({ product }: { product: Product }) {
                 {s}
               </span>
             ))}
+          </div>
+        )}
+
+        {(product.rating != null || product.delivery) && (
+          <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+            {product.rating != null && (
+              <span className="text-amber-500">
+                ★ {product.rating}
+                {product.reviews != null && (
+                  <span className="text-neutral-400"> ({product.reviews})</span>
+                )}
+              </span>
+            )}
+            {product.delivery && <span className="truncate">{product.delivery}</span>}
           </div>
         )}
 

@@ -21,13 +21,21 @@ export interface Product {
   retailerKey: string;
   /** Deep link to the product (or retailer search results) on the real website. */
   url: string;
+  /** Star rating (0-5) when the source provides one. */
+  rating?: number;
+  /** Number of reviews when available. */
+  reviews?: number;
+  /** Delivery / shipping note when available, e.g. "Free delivery". */
+  delivery?: string;
   /**
    * How this record was produced:
-   *  - "scrape": parsed from the retailer's live HTML.
-   *  - "sample": generated catalog data used as a fallback when live scraping is
-   *    blocked (anti-bot protection, JS-rendered content, missing proxy, etc.).
+   *  - "live": real product data from the Google Shopping feed (via SerpAPI),
+   *    with real photo, price, merchant and product link.
+   *  - "scrape": parsed from the retailer's live HTML (JSON-LD).
+   *  - "sample": generated catalog data used as a fallback when no live data
+   *    source is configured / reachable.
    */
-  source: "scrape" | "sample";
+  source: "live" | "scrape" | "sample";
 }
 
 export interface RetailerMeta {
@@ -41,13 +49,19 @@ export interface SearchResponse {
   query: string;
   gender: Gender;
   count: number;
-  /** Per-retailer status, useful for surfacing scrape failures in the UI. */
+  /**
+   * Overall data mode for this response:
+   *  - "live": real product data (Google Shopping via SerpAPI).
+   *  - "sample": generated fallback data (no live source configured/reachable).
+   */
+  mode: "live" | "sample";
+  /** Human-readable note about the data mode (e.g. how to enable live data). */
+  note?: string;
+  /** Per-merchant/retailer breakdown, used to render filter chips. */
   retailers: Array<{
     key: string;
     name: string;
     count: number;
-    source: "scrape" | "sample" | "error";
-    note?: string;
   }>;
   products: Product[];
 }

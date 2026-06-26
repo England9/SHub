@@ -144,6 +144,24 @@ export default function Home() {
 
       {data && (
         <>
+          <div
+            className={`mb-4 flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm ${
+              data.mode === "live"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+            }`}
+          >
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                data.mode === "live" ? "bg-emerald-500" : "bg-amber-500"
+              }`}
+            />
+            <span className="font-semibold">
+              {data.mode === "live" ? "Live data" : "Sample data"}
+            </span>
+            {data.note && <span className="text-xs opacity-80">— {data.note}</span>}
+          </div>
+
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <span className="text-sm text-neutral-500">
               {visibleProducts.length} results for{" "}
@@ -159,7 +177,7 @@ export default function Home() {
                 <button
                   key={r.key}
                   onClick={() => toggleRetailer(r.key)}
-                  title={r.note ?? `${r.count} from ${r.name}`}
+                  title={`${r.count} from ${r.name}`}
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                     active
                       ? "border-black bg-black text-white"
